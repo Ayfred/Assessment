@@ -1,0 +1,9 @@
+<component name="ArtifactManager">
+  <artifact type="jar" build-on-make="true" name="createIndex:jar">
+    <output-path>$PROJECT_DIR$/out/artifacts/createIndex_jar</output-path>
+    <root id="archive" name="createIndex.jar">
+      <element id="module-output" name="createIndex" />
+      <element id="extracted-dir" path="$MAVEN_REPOSITORY$/org/apache/lucene/lucene-core/8.6.3/lucene-core-8.6.3.jar" path-in-jar="/" />
+    </root>
+  </artifact>
+</component>
