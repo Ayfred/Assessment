@@ -1,77 +1,66 @@
+
+import java.io.FileReader;
+import java.io.IOException;
+
+import java.nio.file.Paths;
+
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
-import org.apache.lucene.document.StringField;
 import org.apache.lucene.document.TextField;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
-
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.ArrayList;
+// import org.apache.lucene.store.RAMDirectory;
 
 public class CreateIndex
 {
+
     // Directory where the search index will be saved
     private static String INDEX_DIRECTORY = "../index";
 
     public static void main(String[] args) throws IOException
     {
-        // Make sure we were given something to index
-        if (args.length <= 0)
-        {
-            System.out.println("Expected corpus as input");
-            System.exit(1);
-        }
-
         // Analyzer that is used to process TextField
         Analyzer analyzer = new StandardAnalyzer();
-        //KeywordAnalyzer analyzer = new KeywordAnalyzer();
-        //WhitespaceAnalyzer analyzer = new WhitespaceAnalyzer();
-        //SimpleAnalyzer analyzer = new SimpleAnalyzer();
-        //StopAnalyzer analyzer = new StopAnalyzer();
 
+        System.out.println("args[0]: " + args[0] + "\n");
 
-        /* Token filters ? */
+        FileReader fileReader = new FileReader(args[0]);
 
-
-        /* Lucene search */
-        //IndexSearcher
-
-        // ArrayList of documents in the corpus
-        ArrayList<Document> documents = new ArrayList<Document>();
-
-        // Open the directory that contains the search index
-        Directory directory = FSDirectory.open(Paths.get(INDEX_DIRECTORY));
-
-        // Set up an index writer to add process and save documents to the index
-        IndexWriterConfig config = new IndexWriterConfig(analyzer);
-        config.setOpenMode(IndexWriterConfig.OpenMode.CREATE);
-        IndexWriter iwriter = new IndexWriter(directory, config);
-
-        for (String arg : args)
-        {
-            // Load the contents of the file
-            System.out.printf("Indexing \"%s\"\n", arg);
-            String content = new String(Files.readAllBytes(Paths.get(arg)));
-
-            // Create a new document and add the file's contents
-            Document doc = new Document();
-            doc.add(new StringField("filename", arg, Field.Store.YES));
-            doc.add(new TextField("content", content, Field.Store.YES));
-
-            // Add the file to our linked list
-            documents.add(doc);
+        for(int i = 0; i < args.length; i++) {
+            System.out.println("args[" + i + "]: " + args[i] + "\n");
         }
 
-        // Write all the documents in the linked list to the search index
-        iwriter.addDocuments(documents);
+        // To store an index in memory
+        // Directory directory = new RAMDirectory();
+        // To store an index on disk
+        Directory directory = FSDirectory.open(Paths.get(INDEX_DIRECTORY));
+        IndexWriterConfig config = new IndexWriterConfig(analyzer);
 
-        // Commit everything and close
+        // Index opening mode
+        // IndexWriterConfig.OpenMode.CREATE = create a new index
+        // IndexWriterConfig.OpenMode.APPEND = open an existing index
+        // IndexWriterConfig.OpenMode.CREATE_OR_APPEND = create an index if it
+        // does not exist, otherwise it opens it
+        config.setOpenMode(IndexWriterConfig.OpenMode.CREATE);
+
+        IndexWriter iwriter = new IndexWriter(directory, config);
+
+        // Create a new document
+        Document doc = new Document();
+        doc.add(new TextField("title", "Spider-MAN1", Field.Store.YES));
+        doc.add(new TextField("author", "Peter ParkER1", Field.Store.YES));
+        doc.add(new TextField("bibio", "Peter ParkER1", Field.Store.YES));
+        doc.add(new TextField("content", "Peter ParkER1", Field.Store.YES));
+        doc.add(new TextField("index", "superheRO0", Field.Store.YES));
+
+        // Save the document to the index
+        iwriter.addDocument(doc);
+
+        // Commit changes and close everything
         iwriter.close();
         directory.close();
     }
