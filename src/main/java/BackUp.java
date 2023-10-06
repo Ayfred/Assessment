@@ -1,3 +1,4 @@
+/*
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
@@ -19,7 +20,7 @@ public class CreateIndex {
 
     // Directory where the search index will be saved
     //private static String INDEX_DIRECTORY = "../index";
-    private static String INDEX_DIRECTORY = "../index";
+    private static String INDEX_DIRECTORY = "src/main/resources/index";
 
     public static void main(String[] args) throws IOException {
         // Analyzer that is used to process TextField
@@ -141,4 +142,4 @@ public class CreateIndex {
         iwriter.close();
         directory.close();
     }
-}
+}*/
