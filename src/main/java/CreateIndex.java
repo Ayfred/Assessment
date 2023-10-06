@@ -25,7 +25,7 @@ public class CreateIndex {
         // Analyzer that is used to process TextField
         Analyzer analyzer = new StandardAnalyzer();
 
-        File file = new File("src/main/resources/data/cran.all.1400");
+        File file = new File("../cran.all.1400");
 
         FileReader fileReader = new FileReader(file);
         BufferedReader bufferedReader = new BufferedReader(fileReader);
