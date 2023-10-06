@@ -4,9 +4,9 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
-  <groupId>ie.tcd.dalyc24</groupId>
+  <groupId>tcd</groupId>
   <artifactId>createIndex</artifactId>
-  <version>1.2</version>
+  <version>1</version>
 
   <name>createIndex</name>
   <!-- FIXME change it to the project's website -->
@@ -24,6 +24,14 @@
       <artifactId>lucene-core</artifactId>
       <version>8.6.3</version>
     </dependency>
+
+    <!-- https://mvnrepository.com/artifact/org.apache.lucene/lucene-queryparser -->
+    <dependency>
+      <groupId>org.apache.lucene</groupId>
+      <artifactId>lucene-queryparser</artifactId>
+      <version>8.6.3</version>
+    </dependency>
+
 
     <dependency>
       <groupId>junit</groupId>
