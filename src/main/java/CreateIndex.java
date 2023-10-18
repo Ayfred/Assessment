@@ -2,6 +2,7 @@ import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
+import org.apache.lucene.document.StringField;
 import org.apache.lucene.document.TextField;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
@@ -19,16 +20,17 @@ public class CreateIndex {
 
     // Directory where the search index will be saved
     //private static String INDEX_DIRECTORY = "../index";
-    private static String INDEX_DIRECTORY = "../index";
+    private static String INDEX_DIRECTORY = "src/main/resources/index";
 
     public static void main(String[] args) throws IOException {
         // Analyzer that is used to process TextField
         Analyzer analyzer = new StandardAnalyzer();
 
-        File file = new File("../cran.all.1400");
+        File file = new File("src/main/resources/data/cran.all.1400");
 
         FileReader fileReader = new FileReader(file);
         BufferedReader bufferedReader = new BufferedReader(fileReader);
+
 
         String line = "";
         StringBuilder title = new StringBuilder();
@@ -55,7 +57,7 @@ public class CreateIndex {
 
         IndexWriter iwriter = new IndexWriter(directory, config);
 
-        for (int i = 0; i < 1400; i++) {
+        while (line != null) {
 
 
             if (line.contains(".I")) {
@@ -110,6 +112,7 @@ public class CreateIndex {
             }
 
 
+
             System.out.println("index " + index);
             System.out.println("title " + title);
             System.out.println("author " + author);
@@ -118,9 +121,11 @@ public class CreateIndex {
             System.out.println("------------------------------------------------");
 
 
+
             // Create a new document
             Document doc = new Document();
-            doc.add(new TextField("index", index, Field.Store.YES));
+            doc.add(new StringField("index-ID", index, Field.Store.YES));
+            System.out.println("index-ID " + index);
             doc.add(new TextField("title", title.toString(), Field.Store.YES));
             doc.add(new TextField("author", author.toString(), Field.Store.YES));
             doc.add(new TextField("biblio", biblio.toString(), Field.Store.YES));
