@@ -1,15 +1,10 @@
 import org.apache.lucene.analysis.Analyzer;
-import org.apache.lucene.analysis.core.SimpleAnalyzer;
-import org.apache.lucene.analysis.core.StopAnalyzer;
-import org.apache.lucene.analysis.en.EnglishAnalyzer;
-import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.queryparser.classic.QueryParser;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.ScoreDoc;
-import org.apache.lucene.search.similarities.BM25Similarity;
 import org.apache.lucene.search.similarities.Similarity;
 import org.apache.lucene.store.FSDirectory;
 
@@ -17,10 +12,6 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
 
 public class QueryIndexBM25 {
 
@@ -31,17 +22,26 @@ public class QueryIndexBM25 {
             System.exit(1);
         }
 
-        String indexDir = "src/main/resources/index";
+/*        String indexDir = "src/main/resources/index";
         String queryFile = "src/main/resources/data/cran.qry";
-        String saveFileTxtname = "src/main/resources/save/result.txt";
-        String similarityClassName = "BM25Similarity";
+        String saveFileTxtname = "src/main/resources/save/result.txt";*/
+        String similarityClassName = "org.apache.lucene.search.similarities.BM25Similarity";
 
-        int MAX_RESULTS = 50;
+
+        String indexDir = "../index";
+        String queryFile ="../cran.qry";
+        String saveFileTxtname ="../results";
+
 
         String analyzerClassName = args[0];
-        if(args.length == 2){
+
+        //String analyzerClassName = "org.apache.lucene.analysis.en.EnglishAnalyzer";
+
+        if (args.length == 2) {
             similarityClassName = args[1];
         }
+
+        int MAX_RESULTS = 50;
 
         // Initialize the IndexSearcher and Analyzer
         FSDirectory indexx = FSDirectory.open(Paths.get(indexDir));
@@ -69,8 +69,6 @@ public class QueryIndexBM25 {
 
             //Save results in a txt file
             FileWriter writer = new FileWriter(saveFileTxtname);
-            List<ResultLine> resultLines = new ArrayList<>();
-
             while ((line = bufferedReader.readLine()) != null) {
 
                 if (line.startsWith(".I")) {
@@ -86,13 +84,19 @@ public class QueryIndexBM25 {
                         Query query = parser.parse(queryString);
                         ScoreDoc[] hits = isearcher.search(query, MAX_RESULTS).scoreDocs; // Get the set of results from the searcher
 
+                        int rank = 0;
                         for (int i = 0; i < hits.length; i++) {
                             Document hitDoc = isearcher.doc(hits[i].doc);
                             String docId = hitDoc.get("index-ID");
-                            System.out.println("docId: " + docId);
 
-                            ResultLine resultLine = new ResultLine(i, docId, index, hits[i].score);
-                            resultLines.add(resultLine);
+                            rank++;
+
+                            writer.write(index
+                                    + " " + "QO"
+                                    + " " + docId
+                                    + " " + rank
+                                    + " " + hits[i].score
+                                    + " " + "STANDARD" + "\n");
 
 
                         }
@@ -121,82 +125,22 @@ public class QueryIndexBM25 {
                 Query query = parser.parse(queryString);
                 ScoreDoc[] hits = isearcher.search(query, MAX_RESULTS).scoreDocs;
 
+                int rank = 0;
                 for (int i = 0; i < hits.length; i++) {
                     Document hitDoc = isearcher.doc(hits[i].doc);
-                    String docId = hitDoc.get("index-ID"); // Replace "doc_id" with the actual field name
+                    String docId = hitDoc.get("index-ID");
+                    rank++;
 
-                    // Save the results in a list
-                    ResultLine resultLine = new ResultLine(i, docId, index, hits[i].score);
-                    resultLines.add(resultLine);
-
+                    writer.write(index
+                            + " " + "QO"
+                            + " " + docId
+                            + " " + rank
+                            + " " + hits[i].score
+                            + " " + "STANDARD" + "\n");
                 }
-
-
             }
-
-
-            // Sort the resultLines by score
-            Collections.sort(resultLines, new Comparator<ResultLine>() {
-                @Override
-                public int compare(ResultLine o1, ResultLine o2) {
-                    return Double.compare(o2.getScore(), o1.getScore());
-                }
-            });
-
-            // Save results in a txt file with ranks
-            for (int rank = 1; rank <= resultLines.size(); rank++) {
-                ResultLine resultLine = resultLines.get(rank - 1);
-                writer.write(resultLine.getIndex()
-                        + " " + resultLine.getQ()
-                        + " " + resultLine.getDocId()
-                        + " " + rank
-                        + " " + resultLine.getScore()
-                        +" " + resultLine.getAnalyzer()+ "\n");
-            }
-
             writer.close();
 
-
-        }
-    }
-
-
-    // A class to store the result line
-    static class ResultLine {
-        private final int rank;
-        private final String index;
-        private final double score;
-        private final String docId;
-
-        public ResultLine(int rank, String docId, String index, double score) {
-            this.rank = rank;
-            this.index = index;
-            this.score = score;
-            this.docId = docId;
-        }
-
-        public int getRank() {
-            return rank;
-        }
-
-        public String getDocId() {
-            return docId;
-        }
-
-        public String getIndex() {
-            return index;
-        }
-
-        public double getScore() {
-            return score;
-        }
-
-        public String getAnalyzer() {
-            return "STANDARD";
-        }
-
-        public String getQ() {
-            return "Q0";
         }
     }
 
