@@ -1,4 +1,5 @@
 import org.apache.lucene.analysis.Analyzer;
+import org.apache.lucene.analysis.en.EnglishAnalyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
@@ -20,13 +21,13 @@ public class CreateIndex {
 
     // Directory where the search index will be saved
     //private static String INDEX_DIRECTORY = "../index";
-    private static String INDEX_DIRECTORY = "src/main/resources/index";
+    private static String INDEX_DIRECTORY = "../index";
 
     public static void main(String[] args) throws IOException {
         // Analyzer that is used to process TextField
-        Analyzer analyzer = new StandardAnalyzer();
+        Analyzer analyzer = new EnglishAnalyzer();
 
-        File file = new File("src/main/resources/data/cran.all.1400");
+        File file = new File("../cran.all.1400");
 
         FileReader fileReader = new FileReader(file);
         BufferedReader bufferedReader = new BufferedReader(fileReader);
@@ -37,7 +38,7 @@ public class CreateIndex {
         StringBuilder author = new StringBuilder();
         StringBuilder biblio = new StringBuilder();
         StringBuilder content = new StringBuilder();
-        String index = "";
+        //String index = "";
 
         line = bufferedReader.readLine();
 
@@ -57,13 +58,17 @@ public class CreateIndex {
 
         IndexWriter iwriter = new IndexWriter(directory, config);
 
+        Document doc = new Document();
+
+
         while (line != null) {
 
 
             if (line.contains(".I")) {
-                index = line.substring(3);
+                //System.out.println("index " + line.substring(3));
 
-                System.out.println("index " + index);
+                doc.add(new StringField("index-ID", line.substring(3), Field.Store.YES));
+
                 line = bufferedReader.readLine();
 
             }
@@ -77,6 +82,8 @@ public class CreateIndex {
                         title.append(line);
                     }
                 }
+                doc.add(new TextField("title", title.toString(), Field.Store.YES));
+
             }
             if (line.contains(".A")) {
                 while (!line.contains(".B")) {
@@ -86,6 +93,7 @@ public class CreateIndex {
                         author.append(line);
                     }
                 }
+                doc.add(new TextField("author", author.toString(), Field.Store.YES));
             }
             if (line.contains(".B")) {
                 while (!line.contains(".W")) {
@@ -95,6 +103,7 @@ public class CreateIndex {
                         biblio.append(line);
                     }
                 }
+                doc.add(new TextField("biblio", biblio.toString(), Field.Store.YES));
             }
             if (line.contains(".W")) {
                 while (!line.contains(".I")) {
@@ -109,40 +118,34 @@ public class CreateIndex {
                         content.append(line);
                     }
                 }
+                doc.add(new TextField("content", content.toString(), Field.Store.YES));
             }
 
-
-
-            System.out.println("index " + index);
-            System.out.println("title " + title);
+/*            System.out.println("title " + title);
             System.out.println("author " + author);
             System.out.println("biblio " + biblio);
             System.out.println("content " + content);
-            System.out.println("------------------------------------------------");
-
+            System.out.println("------------------------------------------------");*/
 
 
             // Create a new document
-            Document doc = new Document();
-            doc.add(new StringField("index-ID", index, Field.Store.YES));
-            System.out.println("index-ID " + index);
-            doc.add(new TextField("title", title.toString(), Field.Store.YES));
+/*            doc.add(new TextField("title", title.toString(), Field.Store.YES));
             doc.add(new TextField("author", author.toString(), Field.Store.YES));
             doc.add(new TextField("biblio", biblio.toString(), Field.Store.YES));
-            doc.add(new TextField("content", content.toString(), Field.Store.YES));
+            doc.add(new TextField("content", content.toString(), Field.Store.YES));*/
 
             // Save the document to the index
             iwriter.addDocument(doc);
 
             //Reset all variables
-            index = "";
+            //index = "";
             title = new StringBuilder();
             author = new StringBuilder();
             biblio = new StringBuilder();
             content = new StringBuilder();
         }
 
-        // Commit changes and close everything
+        // Commit changes and close the index writer and directory to finish indexing the documents to avoid memory leaks and unnecessary consumption of resources
         iwriter.close();
         directory.close();
     }
