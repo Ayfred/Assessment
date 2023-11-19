@@ -1,3 +1,4 @@
+
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -7,25 +8,36 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.SequenceInputStream;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
-
+import java.util.Scanner;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
+import javax.lang.model.util.Elements;
 import javax.xml.parsers.DocumentBuilderFactory;
 
 import javax.xml.parsers.ParserConfigurationException;
 
 import org.apache.lucene.analysis.Analyzer;
+import org.apache.lucene.analysis.charfilter.BaseCharFilter;
+import org.apache.lucene.analysis.commongrams.CommonGramsFilter;
+import org.apache.lucene.analysis.core.KeywordAnalyzer;
+import org.apache.lucene.analysis.core.SimpleAnalyzer;
+import org.apache.lucene.analysis.core.StopAnalyzer;
+import org.apache.lucene.analysis.core.WhitespaceAnalyzer;
 import org.apache.lucene.analysis.custom.CustomAnalyzer;
 import org.apache.lucene.analysis.en.EnglishAnalyzer;
+import org.apache.lucene.analysis.snowball.SnowballFilter;
+import org.apache.lucene.analysis.standard.StandardAnalyzer;
 // import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.StringField;
@@ -35,12 +47,24 @@ import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.queryparser.classic.MultiFieldQueryParser;
 import org.apache.lucene.queryparser.classic.ParseException;
+import org.apache.lucene.queryparser.classic.QueryParser;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
+import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.TopDocs;
+import org.apache.lucene.search.similarities.AxiomaticF1EXP;
+import org.apache.lucene.search.similarities.AxiomaticF1LOG;
+import org.apache.lucene.search.similarities.AxiomaticF2EXP;
+import org.apache.lucene.search.similarities.AxiomaticF2LOG;
+import org.apache.lucene.search.similarities.BM25Similarity;
+import org.apache.lucene.search.similarities.BooleanSimilarity;
 import org.apache.lucene.search.similarities.ClassicSimilarity;
+import org.apache.lucene.search.similarities.LMDirichletSimilarity;
+import org.apache.lucene.search.similarities.LMJelinekMercerSimilarity;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
+import org.w3c.dom.NodeList;
+import org.apache.lucene.document.Field;
 import org.jsoup.Jsoup;
 
 import org.xml.sax.SAXException;
@@ -101,16 +125,18 @@ public class Index_Query_Eval_final {
         setGlobAnalyzer(new EnglishAnalyzer());
         // setGlobAnalyzer(CustomAnalyzer());
 
-        // deleteINDEX();
-        // setDirectory();
-        // intializeIWriter();
-        // Index_LA();
-        // Index_FT();
-        // iwriter.close();
-        // directory.close();
+        deleteINDEX();
+        setDirectory();
+        intializeIWriter();
+        Index_LA();
+        Index_FT();
+        Index_FBIS();
+        Index_FR94();
+        iwriter.close();
+        directory.close();
 
-        // Query();
-        // Query();
+        //Query();
+        Query();
 
         Eval();
     }
@@ -222,6 +248,41 @@ public class Index_Query_Eval_final {
         freader.close();
         return res;
     }
+
+    public static void Index_FBIS() throws IOException, SAXException, ParserConfigurationException {
+
+        // Analyzer that is used to process TextField
+
+        //
+        File files[] = new File("/Users/akashgarg/Downloads/Lucene-Information-Retrieval-2/Files/docs/fbis")
+                .listFiles();
+        assert files != null;
+        for (File file : files) {
+
+            String contents = new String(Files.readAllBytes(Paths.get(file.getPath())));
+
+            contents = contents.replaceAll("&.*?;", "");
+            contents = contents.replaceAll(" P=[0-9]+", "");
+            contents = contents.replaceAll(" ID=[A-Z0-9]*-[A-Z0-9]*-[A-Z0-9]*-[A-Z0-9]*", "");
+            contents = contents.replaceAll("<3>", "");
+            contents = contents.replaceAll("</3>", "");
+            contents = contents.replaceAll("&-\\|", "");
+            contents = contents.replaceAll("\\|amp;", "");
+            contents = contents.replaceAll("&\\|", "");
+            contents = contents.replaceAll("\\|yen;", "");
+            InputStream inputStream = new ByteArrayInputStream(contents.getBytes(Charset.forName("UTF-8")));
+            List<InputStream> streams = Arrays.asList(new ByteArrayInputStream("<root>".getBytes()), inputStream,
+                    new ByteArrayInputStream("</root>".getBytes()));
+            if (!file.getAbsolutePath().contains("read")) {
+                InputStream is = new SequenceInputStream(Collections.enumeration(streams));
+                Document doc = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(is);
+                indexDocs(doc,file.getAbsolutePath());
+            }
+        }
+
+        System.out.println("Indexing Complete FBIS");
+    }
+
 
     public static void Query() throws IOException {
 
@@ -367,6 +428,7 @@ public class Index_Query_Eval_final {
         // String argument1 = "/Users/akashgarg/Desktop/WebSearch/refactor_cranqel";
         String argument1 = "/Users/akashgarg/Downloads/Lucene-Information-Retrieval-2/Files/qrels.assignment2.part1";
 
+
         String argument2 = "/Users/akashgarg/Desktop/WebSearch/result";
         // String argument2 = "/Users/akashgarg/Desktop/WebSearch/results";
 
@@ -447,6 +509,31 @@ public class Index_Query_Eval_final {
         // leaks and unnecessary consumption of resources
         // iwriter.close();
         System.out.println("Indexing Done FT");
+    }
+    private static void Index_FR94() throws IOException, ParserConfigurationException, SAXException {
+        //Change Path
+        //File files[] = new File("/Users/sanatparanjape/Desktop/IR2/Assignment Two/fr94").listFiles();
+        File files[] = new File("/Users/akashgarg/Downloads/Lucene-Information-Retrieval-2/Files/docs/fr94").listFiles();
+        assert files != null;
+        for (File file : files) {
+            if (file.isDirectory()) {
+                File innerFiles[] = file.listFiles();
+                assert innerFiles != null;
+                for (File file2 : innerFiles) {
+                    String contents = new String(Files.readAllBytes(Paths.get(file2.getPath())));
+                    contents = contents.replaceAll("&hyph;", "-");
+                    contents = contents.replaceAll("&.*?;", " ");
+                    InputStream inputStream = new ByteArrayInputStream(contents.getBytes(Charset.forName("UTF-8")));
+                    List<InputStream> streams = Arrays.asList(new ByteArrayInputStream("<root>".getBytes()),
+                            inputStream, new ByteArrayInputStream("</root>".getBytes()));
+                    if (!file.getAbsolutePath().contains("read")) {
+                        InputStream is = new SequenceInputStream(Collections.enumeration(streams));
+                        Document doc = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(is);
+                        indexDocs(doc,file.getAbsolutePath());
+                    }
+                }
+            }
+        }
     }
 
 }
